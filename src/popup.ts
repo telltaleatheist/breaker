@@ -206,7 +206,7 @@ function verdictTitle(entry: LedgerEntryView): string {
     case 'unseen':
       return 'Pi-hole never saw a query for this name from this device.';
     case 'unchecked':
-      return `Not cross-checked yet — Chrome reported that the request ${REASON_LABELS[entry.reason]}.`;
+      return `Pi-hole's log could not be checked — Chrome reported that the request ${REASON_LABELS[entry.reason]}.`;
   }
 }
 
@@ -217,16 +217,15 @@ function renderTabActions(): void {
 
   const allowSelected = button(
     `Unblock ${selected.size} selected`,
-    'primary',
+    'secondary',
     selected.size === 0,
     () => void allow([...selected])
   );
-  const allowAll = button('Unblock all', 'secondary', false, () =>
-    void allow(hosts.map((host) => host.host))
+  const allowAll = button('Unblock all and reload', 'primary', false, () =>
+    void allow(hosts.map((host) => host.host), { reload: true })
   );
-  const check = button('Check with Pi-hole', 'ghost', false, () => void crossCheckTab());
 
-  elements.tabActions.append(allowSelected, allowAll, check);
+  elements.tabActions.append(allowAll, allowSelected);
 }
 
 function renderTabAllows(state: BreakerStatus): void {
@@ -429,7 +428,7 @@ async function refresh(): Promise<void> {
   for (const host of [...selected]) if (!present.has(host)) selected.delete(host);
 }
 
-async function allow(hosts: string[]): Promise<void> {
+async function allow(hosts: string[], options: { reload: boolean } = { reload: false }): Promise<void> {
   const target = tabId;
   if (target === null || hosts.length === 0) return;
   await act(async () => {
@@ -446,23 +445,18 @@ async function allow(hosts: string[]): Promise<void> {
         'warn'
       );
     }
+    if (options.reload) {
+      // The background owns the delay: this popup is about to close. 2.5 s clears
+      // Pi-hole's 2 s TTL on the blocked answers the browser may still hold.
+      await send({ kind: 'reload-tab', tabId: target, delayMs: 2500 });
+      window.close();
+    }
   });
 }
 
 async function revokeGrant(domain: string): Promise<void> {
   await act(async () => {
     await send({ kind: 'revoke-allow', domain });
-  });
-}
-
-async function crossCheckTab(): Promise<void> {
-  const target = tabId;
-  if (target === null) return;
-  await act(async () => {
-    const result = await send({ kind: 'cross-check', tabId: target });
-    if (!result.dohSuspected && result.verdicts.length === 0) {
-      setBanner('Nothing to cross-check on this tab yet.', 'warn');
-    }
   });
 }
 

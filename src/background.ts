@@ -64,7 +64,6 @@ import {
   type BreakerSettings,
   type BreakerStatus,
   type ConnectResult,
-  type CrossCheckView,
   type DeviceRecord,
   type DeviceView,
   type IdentityView,
@@ -576,6 +575,14 @@ async function buildStatus(tabId: number | null): Promise<BreakerStatus> {
     const device = await peekDevice(client, identity);
     const grants = await listBreakerAllows(client);
 
+    if (tabId !== null) {
+      try {
+        await crossCheckTab(client, identity, tabId);
+      } catch {
+        // Pi-hole's query log was unavailable; the hosts stay "not checked".
+      }
+    }
+
     badgeState = {
       networkOff: network.blocking === 'disabled',
       deviceUnfiltered: device?.unfiltered ?? false
@@ -602,6 +609,8 @@ async function buildStatus(tabId: number | null): Promise<BreakerStatus> {
       network: { blocking: network.blocking, timer: network.timer } satisfies NetworkView,
       device,
       allows,
+      // Re-read: the cross-check above may have set the DoH flag after `tab` was built.
+      tab: { ...tab, dohSuspected: tabId !== null && dohSuspected.has(tabId) },
       nowSeconds: nowSeconds()
     };
   } catch (error) {
@@ -765,14 +774,15 @@ async function handleRevokeAllow(domain: string): Promise<null> {
   return null;
 }
 
-async function handleCrossCheck(tabId: number): Promise<CrossCheckView> {
-  await ledgersRestored;
-  const client = await getClient();
-  // Only the IP is needed to filter the query log; a cross-check must not create
-  // anything on the Pi-hole.
-  const identity = await resolveIdentity(client);
-
-  const ledger = ledgers.get(tabId) ?? new Map<string, LedgerEntry>();
+/**
+ * Ask Pi-hole's query log which of a tab's failures Pi-hole actually caused, and
+ * write the verdicts onto the ledger. Runs as part of every status build for a tab
+ * with something in its ledger, so the popup opens with hosts already labelled.
+ * Failure here must never break the status: the hosts simply stay "not checked".
+ */
+async function crossCheckTab(client: PiholeClient, identity: DeviceIdentity, tabId: number): Promise<void> {
+  const ledger = ledgers.get(tabId);
+  if (!ledger || ledger.size === 0) return;
   const hosts = [...ledger.keys()];
 
   const queries = await client.getQueries({
@@ -782,9 +792,6 @@ async function handleCrossCheck(tabId: number): Promise<CrossCheckView> {
   });
 
   const result = crossCheck(hosts, queries);
-
-  // Write the verdicts back onto the ledger so the popup's list shows them without
-  // a second round trip.
   for (const [host, verdict] of result.verdicts) {
     const entry = ledger.get(host);
     if (entry) entry.verdict = verdict;
@@ -792,14 +799,20 @@ async function handleCrossCheck(tabId: number): Promise<CrossCheckView> {
   persistLedgers();
 
   // "The ledger has hosts but Pi-hole saw nothing from this IP" is the DoH tell.
-  const suspected = hosts.length > 0 && result.noQueriesSeen;
-  if (suspected) dohSuspected.add(tabId);
+  if (hosts.length > 0 && result.noQueriesSeen) dohSuspected.add(tabId);
   else dohSuspected.delete(tabId);
+}
 
-  return {
-    verdicts: [...result.verdicts].map(([host, verdict]) => ({ host, verdict })),
-    dohSuspected: suspected
-  };
+/**
+ * Reload a tab a little later. The delay covers Pi-hole's 2 s TTL on blocked
+ * answers, so a reload straight after an allow does not re-use the cached block.
+ */
+function reloadTabLater(tabId: number, delayMs: number): void {
+  setTimeout(() => {
+    void chrome.tabs.reload(tabId, { bypassCache: true }).catch(() => {
+      // The tab closed in the meantime. Nothing to reload.
+    });
+  }, Math.max(0, delayMs));
 }
 
 // ─── message router ───────────────────────────────────────────────────────────
@@ -824,8 +837,9 @@ async function route(request: BreakerRequest): Promise<ResponsePayloads[RequestK
       return handleAllowHosts(request.tabId, request.hosts, request.durationSeconds);
     case 'revoke-allow':
       return handleRevokeAllow(request.domain);
-    case 'cross-check':
-      return handleCrossCheck(request.tabId);
+    case 'reload-tab':
+      reloadTabLater(request.tabId, request.delayMs);
+      return null;
     case 'sweep-now':
       return runSweep();
   }

@@ -107,8 +107,8 @@ produce `ERR_NAME_NOT_RESOLVED` (NXDOMAIN mode), or `ERR_CONNECTION_REFUSED` /
 everything else — `ERR_ABORTED`, `ERR_BLOCKED_BY_CLIENT`, timeouts — because
 offering to allow a domain Pi-hole never touched is a promise it cannot keep.
 
-Those hostnames become the tab's list, busiest first. Tick the ones you need and
-press **Allow selected**, or **Allow all**.
+Those hostnames become the tab's list, busiest first. Press **Unblock all and
+reload**, or tick the ones you need and press **Unblock selected**.
 
 An allow becomes an exact-match entry on Pi-hole's allowlist, assigned to **this
 device's Breaker group only**. A group-scoped allowlist entry applies to clients in
@@ -120,16 +120,19 @@ entry is deleted.
 your browser's cached "this is 0.0.0.0" is stale almost immediately — a reload is
 all it takes.
 
-**Cross-check** asks Pi-hole's own query log which of the listed failures Pi-hole
-actually caused. Each host is then marked:
+Opening the popup asks Pi-hole's own query log which of the listed failures Pi-hole
+actually caused. Each host is marked:
 
 - `blocked` — Pi-hole's log confirms it refused this name. Allowing it will help.
 - `not Pi-hole` — Pi-hole answered normally. The failure is something else, and
   allowing it will not help.
 - `unseen` — Pi-hole never saw a query for it from this device.
 
-Nothing is guessed on your behalf: before a cross-check, hosts are labelled
-`not checked`.
+If the query log could not be read, hosts stay labelled `not checked`.
+
+**Unblock all and reload** does the whole thing in one press: every listed host is
+allowed for the chosen duration and the page reloads 2.5 seconds later, once the
+blocked answers the browser cached have expired.
 
 **Turning back on lags; turning off does not.** A blocked answer lives 2 seconds in
 the browser's cache, so switching Pi-hole off shows up on the next reload. The real

@@ -159,11 +159,6 @@ export interface AllowResultView {
   skipped: { domain: string; why: string }[];
 }
 
-export interface CrossCheckView {
-  verdicts: { host: string; verdict: 'blocked' | 'allowed' | 'unseen' }[];
-  dohSuspected: boolean;
-}
-
 export interface SweepResult {
   allowsRemoved: string[];
   devicesRestored: string[];
@@ -184,8 +179,11 @@ export type BreakerRequest =
   | { kind: 'set-device'; unfiltered: boolean; durationSeconds: number | null }
   | { kind: 'allow-hosts'; tabId: number; hosts: string[]; durationSeconds: number | null }
   | { kind: 'revoke-allow'; domain: string }
-  /** ask Pi-hole's query log which of this tab's failures it actually caused */
-  | { kind: 'cross-check'; tabId: number }
+  /**
+   * Reload a tab after a delay. Lives in the background because the popup closes
+   * the moment the user's attention moves, and a timer in it dies with it.
+   */
+  | { kind: 'reload-tab'; tabId: number; delayMs: number }
   | { kind: 'sweep-now' };
 
 export type RequestKind = BreakerRequest['kind'];
@@ -200,7 +198,7 @@ export interface ResponsePayloads {
   'set-device': DeviceView;
   'allow-hosts': AllowResultView;
   'revoke-allow': null;
-  'cross-check': CrossCheckView;
+  'reload-tab': null;
   'sweep-now': SweepResult;
 }
 
