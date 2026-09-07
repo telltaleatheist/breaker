@@ -145,8 +145,8 @@ function renderTabHosts(state: BreakerStatus): void {
     const empty = document.createElement('p');
     empty.className = 'empty';
     empty.textContent =
-      'Nothing on this tab looks DNS-blocked. Reload the page with the popup closed, ' +
-      'then open it again — Breaker only sees requests made while it is watching.';
+      'Pi-hole has not blocked anything on this page yet. If the page is broken, reload it ' +
+      'with this popup closed, then open the popup again.';
     elements.tabHosts.append(empty);
     return;
   }
@@ -216,15 +216,15 @@ function renderTabActions(): void {
   if (hosts.length === 0) return;
 
   const allowSelected = button(
-    `Allow ${selected.size} selected`,
+    `Unblock ${selected.size} selected`,
     'primary',
     selected.size === 0,
     () => void allow([...selected])
   );
-  const allowAll = button('Allow all', 'secondary', false, () =>
+  const allowAll = button('Unblock all', 'secondary', false, () =>
     void allow(hosts.map((host) => host.host))
   );
-  const check = button('Cross-check', 'ghost', false, () => void crossCheckTab());
+  const check = button('Check with Pi-hole', 'ghost', false, () => void crossCheckTab());
 
   elements.tabActions.append(allowSelected, allowAll, check);
 }
@@ -237,7 +237,7 @@ function renderTabAllows(state: BreakerStatus): void {
   if (state.allows.length === 0) return;
 
   const heading = document.createElement('h3');
-  heading.textContent = 'Open circuits';
+  heading.textContent = 'Unblocked for now';
   elements.tabAllows.append(heading);
 
   for (const grant of [...forSite, ...others]) {
@@ -279,17 +279,17 @@ function renderDevice(state: BreakerStatus): void {
       elements.deviceState.textContent = 'Not set up yet';
       elements.deviceState.className = 'state';
       elements.deviceButton.disabled = busy;
-      elements.deviceButton.textContent = 'Set up and unfilter this device';
+      elements.deviceButton.textContent = 'Turn Pi-hole off for this computer';
       elements.deviceNote.textContent =
-        'The first use creates a group and a client entry for this machine on your ' +
-        'Pi-hole. Nothing has been written to it yet.';
+        'Only this computer. Everyone else stays protected. The first press registers this ' +
+        'computer with your Pi-hole.';
     } else {
       elements.deviceState.textContent = state.connection.configured
         ? 'Unavailable while Pi-hole is unreachable.'
         : 'Connect a Pi-hole first.';
       elements.deviceState.className = 'state';
       elements.deviceButton.disabled = true;
-      elements.deviceButton.textContent = 'Unfilter this device';
+      elements.deviceButton.textContent = 'Turn Pi-hole off for this computer';
       elements.deviceNote.textContent = '';
     }
     elements.deviceState.dataset['expires'] = '';
@@ -297,21 +297,21 @@ function renderDevice(state: BreakerStatus): void {
   }
 
   elements.deviceState.textContent = device.unfiltered
-    ? `Unfiltered · ${expiryText(device.expires)}`
-    : 'Filtered';
+    ? `Pi-hole is OFF for this computer · ${expiryText(device.expires)}`
+    : 'Pi-hole is on for this computer';
   elements.deviceState.className = device.unfiltered ? 'state state-off' : 'state state-on';
   elements.deviceState.dataset['expires'] =
     device.unfiltered && device.expires !== null ? String(device.expires) : '';
 
   elements.deviceButton.disabled = busy;
   elements.deviceButton.textContent = device.unfiltered
-    ? 'Restore filtering'
-    : 'Unfilter this device';
+    ? 'Turn Pi-hole back on for this computer'
+    : 'Turn Pi-hole off for this computer';
 
   const identity = device.identity;
   elements.deviceNote.textContent =
     identity.keyedBy === 'mac'
-      ? `Pi-hole sees this machine as ${identity.ip} (MAC ${identity.hwaddr}), group “${device.groupName}”.`
+      ? `Only this computer (${identity.ip}). Everyone else stays protected.`
       : `Pi-hole has no MAC for this machine, so Breaker is using the address ${identity.ip}. ` +
         `If you are on a VPN or behind another router, that address may be the router — and ` +
         `this switch would then affect everything behind it.`;
@@ -324,7 +324,7 @@ function renderNetwork(state: BreakerStatus): void {
       ? 'Unavailable while Pi-hole is unreachable.'
       : 'Connect a Pi-hole first.';
     elements.networkButton.disabled = true;
-    elements.networkButton.textContent = 'Turn blocking off';
+    elements.networkButton.textContent = 'Turn Pi-hole off for everyone';
     elements.networkNote.textContent = '';
     return;
   }
@@ -333,10 +333,10 @@ function renderNetwork(state: BreakerStatus): void {
   elements.networkState.className = off ? 'state state-off' : 'state state-on';
   elements.networkState.textContent = off
     ? network.timer === null
-      ? 'Blocking off · until you say'
-      : `Blocking off · ${formatRemaining(network.timer)}`
+      ? 'Pi-hole is OFF for everyone · until you say'
+      : `Pi-hole is OFF for everyone · ${formatRemaining(network.timer)}`
     : network.blocking === 'enabled'
-      ? 'Blocking on'
+      ? 'Pi-hole is on for everyone'
       : `Pi-hole reports "${network.blocking}"`;
   // Pi-hole owns this countdown, so it is rendered from a deadline derived once
   // rather than from a second timer of ours that could disagree with it.
@@ -344,11 +344,11 @@ function renderNetwork(state: BreakerStatus): void {
     off && network.timer !== null ? String(currentSeconds() + Math.floor(network.timer)) : '';
 
   elements.networkButton.disabled = busy;
-  elements.networkButton.textContent = off ? 'Turn blocking back on' : 'Turn blocking off';
+  elements.networkButton.textContent = off ? 'Turn Pi-hole back on for everyone' : 'Turn Pi-hole off for everyone';
   elements.networkNote.textContent = off
-    ? 'Every device on the network is unfiltered right now.'
-    : 'Trips the whole house. Pi-hole runs the countdown itself, so it comes back even ' +
-      'if this browser is closed.';
+    ? 'Every device in the house is unprotected right now.'
+    : 'Every device in the house. Pi-hole runs the countdown itself, so it comes back on ' +
+      'even if this browser is closed.';
 }
 
 function render(): void {
@@ -377,8 +377,7 @@ function render(): void {
   }
 
   elements.tabNote.textContent =
-    'Allowing a domain applies to this device only, and only for the chosen time. ' +
-    'Pi-hole stamps blocked answers with a 2-second TTL, so a page reload is enough.';
+    'Unblocking here applies to this computer only, for the chosen time. Reload the page afterwards.';
 }
 
 // ─── helpers ──────────────────────────────────────────────────────────────────

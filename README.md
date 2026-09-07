@@ -10,11 +10,12 @@ Three switches:
 
 | Switch | What it does | Who it affects |
 | --- | --- | --- |
-| **This tab** | Allows the specific hostnames that failed on this page | Just this device |
-| **This device** | Takes this machine out of the filtered group entirely | Just this device |
-| **Whole network** | Turns Pi-hole's blocking off | Everyone in the house |
+| **This page** | Unblocks the specific hostnames Pi-hole blocked on this page | Just this computer |
+| **This computer** | Turns Pi-hole off for this computer only | Just this computer |
+| **Everyone** | Turns Pi-hole off for the whole network | Everyone in the house |
 
-Every one of them takes a duration — **10 minutes, 1 hour, 24 hours, or until you
+In the popup, the three read as **Pi-hole is on / off** for this page, this computer,
+or everyone — one vocabulary, one idea. Every one of them takes a duration — **10 minutes, 1 hour, 24 hours, or until you
 say** — and puts itself back when the time is up. Nothing is left switched off
 because you forgot.
 
