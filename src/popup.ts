@@ -192,7 +192,7 @@ function verdictLabel(entry: LedgerEntryView): string {
     case 'unseen':
       return 'unseen';
     case 'unchecked':
-      return entry.reason === 'null-ip' ? 'likely' : 'maybe';
+      return 'not checked';
   }
 }
 
@@ -311,7 +311,7 @@ function renderDevice(state: BreakerStatus): void {
   const identity = device.identity;
   elements.deviceNote.textContent =
     identity.keyedBy === 'mac'
-      ? `Only this computer (${identity.ip}). Everyone else stays protected.`
+      ? `Only this computer (${identity.ip}). Everyone else stays protected. After turning back on, ads can linger a few minutes until the browser's DNS cache expires.`
       : `Pi-hole has no MAC for this machine, so Breaker is using the address ${identity.ip}. ` +
         `If you are on a VPN or behind another router, that address may be the router — and ` +
         `this switch would then affect everything behind it.`;
@@ -348,7 +348,8 @@ function renderNetwork(state: BreakerStatus): void {
   elements.networkNote.textContent = off
     ? 'Every device in the house is unprotected right now.'
     : 'Every device in the house. Pi-hole runs the countdown itself, so it comes back on ' +
-      'even if this browser is closed.';
+      'even if this browser is closed. After turning back on, ads can linger a few minutes ' +
+      'until the browser\'s DNS cache expires.';
 }
 
 function render(): void {

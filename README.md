@@ -129,7 +129,13 @@ actually caused. Each host is then marked:
 - `unseen` — Pi-hole never saw a query for it from this device.
 
 Nothing is guessed on your behalf: before a cross-check, hosts are labelled
-`likely` (the `0.0.0.0` shape) or `maybe` (the ambiguous ones).
+`not checked`.
+
+**Turning back on lags; turning off does not.** A blocked answer lives 2 seconds in
+the browser's cache, so switching Pi-hole off shows up on the next reload. The real
+addresses the browser cached while Pi-hole was off live as long as their owners'
+TTLs say — often a few minutes — so after switching back on, ads can linger until
+those expire. Chrome's `chrome://net-internals/#dns` → Clear host cache ends it early.
 
 ### This device
 
