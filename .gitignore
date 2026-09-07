@@ -1,6 +1,9 @@
 node_modules/
 dist/
 
+# This machine's Pi-hole address + app password, baked into a local build only.
+breaker.local.json
+
 # Build outputs
 *.zip
 .package-staging/

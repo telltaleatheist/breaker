@@ -15,6 +15,7 @@ import {
   send,
   STORAGE_KEYS,
   type BreakerSettings,
+  type BreakerStatus,
   type ConnectResult,
   type DeviceView
 } from './messages';
@@ -133,6 +134,17 @@ async function loadSettings(): Promise<BreakerSettings> {
 }
 
 async function refresh(): Promise<void> {
+  // Ask the background first: on a build with baked settings, its first load is
+  // what seeds storage, and reading storage before that would show empty fields
+  // for a Pi-hole that is in fact already connected.
+  let status: BreakerStatus | null = null;
+  let statusError: unknown = null;
+  try {
+    status = await send({ kind: 'get-status', tabId: null });
+  } catch (error) {
+    statusError = error;
+  }
+
   const settings = await loadSettings();
   elements.url.value = settings.baseUrl;
   elements.password.value = settings.password;
@@ -150,7 +162,7 @@ async function refresh(): Promise<void> {
   }
 
   try {
-    const status = await send({ kind: 'get-status', tabId: null });
+    if (status === null) throw statusError;
     if (status.connection.ok) {
       const identity = status.connection.identity;
       setResult(

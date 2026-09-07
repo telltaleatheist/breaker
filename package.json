@@ -16,7 +16,7 @@
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.test.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "package": "node build.mjs && node package.mjs",
+    "package": "node build.mjs --dist && node package.mjs",
     "live-check": "node scripts/live-check.mjs"
   },
   "devDependencies": {

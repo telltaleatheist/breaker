@@ -25,6 +25,8 @@ import {
   type StoredSession
 } from './api/client';
 import { formatVersion, PiholeVersionError } from './api/version';
+import { BAKED_SETTINGS } from './baked';
+import { seedSettings } from './core/settings';
 import {
   classify,
   ledgerList,
@@ -156,8 +158,12 @@ function clearTab(tabId: number): void {
 
 async function loadSettings(): Promise<BreakerSettings> {
   const stored = await chrome.storage.local.get(STORAGE_KEYS.settings);
-  const settings = stored[STORAGE_KEYS.settings] as Partial<BreakerSettings> | undefined;
-  return { ...DEFAULT_SETTINGS, ...settings };
+  const record = stored[STORAGE_KEYS.settings] as Partial<BreakerSettings> | undefined;
+  const { settings, seeded } = seedSettings(record, BAKED_SETTINGS);
+  // Persist the seed so it becomes an ordinary saved record: from here on the user
+  // owns it, and Disconnect (which saves an empty record) sticks.
+  if (seeded) await saveSettings(settings);
+  return settings;
 }
 
 async function saveSettings(settings: BreakerSettings): Promise<void> {
@@ -632,7 +638,10 @@ async function handleDisconnect(): Promise<null> {
     // Already unreachable or already logged out. Forgetting the credentials
     // locally is the part the user asked for and must happen regardless.
   }
-  await chrome.storage.local.remove([STORAGE_KEYS.settings, STORAGE_KEYS.device]);
+  // Save an EMPTY record rather than removing the key: "never saved" is what lets
+  // a baked build seed itself, and a disconnect must not be undone by the next load.
+  await saveSettings(DEFAULT_SETTINGS);
+  await chrome.storage.local.remove(STORAGE_KEYS.device);
   await chrome.storage.session.remove(STORAGE_KEYS.session);
   invalidateClient();
   badgeState = { networkOff: false, deviceUnfiltered: false };

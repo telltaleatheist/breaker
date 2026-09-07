@@ -71,6 +71,24 @@ Connected to Pi-hole v6.4.3 as 192.168.1.42 (MAC 3c:22:fb:12:34:56)
 tab switches only work if it is actually this machine — see
 [When the device is not what Pi-hole thinks](#when-the-device-is-not-what-pi-hole-thinks).
 
+### Skip the typing: a preconfigured build
+
+If you build Breaker yourself, you can bake your own Pi-hole address and app
+password into the build so it starts connected. Create `breaker.local.json` in the
+repo root (it is gitignored):
+
+```json
+{ "baseUrl": "http://pi.hole", "password": "your-app-password" }
+```
+
+`npm run build` reads it (or the file named by `BREAKER_CONFIG`) and seeds the
+extension's settings on its first run. Options can still change them afterwards,
+and Disconnect still means disconnect — the baked values are used only when nothing
+has ever been saved.
+
+`npm run package` always builds **without** it. A zip meant for other people must
+not carry your credentials.
+
 ---
 
 ## How each switch works

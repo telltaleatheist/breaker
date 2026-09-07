@@ -12,13 +12,37 @@
  */
 
 import * as esbuild from 'esbuild';
-import { cpSync, existsSync, mkdirSync, rmSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const watch = process.argv.includes('--watch');
+// Distribution build: ship WITHOUT a baked Pi-hole address/password. A developer's
+// own build can carry theirs (below) so they never retype it; a build meant for
+// other people must not, because it would leak one Pi-hole's credentials into
+// everyone's extension and match nobody else's Pi-hole anyway.
+const dist = process.argv.includes('--dist');
+
+// Bake this machine's Pi-hole settings into the build so the extension starts
+// connected. Read from breaker.local.json in the repo root (gitignored), or the
+// file named by BREAKER_CONFIG. Seeded into chrome.storage on first run only —
+// see core/settings.ts — so the options page can still override it.
+const baked = { baseUrl: '', password: '' };
+if (dist) {
+  console.log('[build] --dist: no baked Pi-hole settings (each user enters theirs in Options)');
+} else {
+  const configPath = process.env.BREAKER_CONFIG ?? join(root, 'breaker.local.json');
+  if (existsSync(configPath)) {
+    const config = JSON.parse(readFileSync(configPath, 'utf8'));
+    baked.baseUrl = typeof config.baseUrl === 'string' ? config.baseUrl : '';
+    baked.password = typeof config.password === 'string' ? config.password : '';
+    console.log(`[build] baked Pi-hole settings from ${configPath} (${baked.baseUrl || 'no address'})`);
+  } else {
+    console.log('[build] no breaker.local.json — the build starts unconfigured');
+  }
+}
 
 // Icons first: dist/ is a copy of static/, so they must exist before the copy.
 const iconsDir = join(root, 'static', 'icons');
@@ -43,7 +67,10 @@ const options = {
   outdir: 'dist',
   logLevel: 'info',
   legalComments: 'none',
-  sourcemap: watch ? 'inline' : false
+  sourcemap: watch ? 'inline' : false,
+  define: {
+    __BREAKER_BAKED__: JSON.stringify(baked)
+  }
 };
 
 if (watch) {
