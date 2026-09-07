@@ -29,7 +29,7 @@ speaks to, not the point of the product; the whole Pi-hole vocabulary lives behi
 Breaker is not in the Chrome Web Store yet, so it installs unpacked.
 
 ```bash
-git clone <this repo> breaker
+git clone https://github.com/telltaleatheist/breaker.git
 cd breaker
 npm install
 npm run build
@@ -64,7 +64,7 @@ and is the only thing that works if you have two-factor authentication switched 
 Press **Connect**. You should get something like:
 
 ```
-Connected to Pi-hole v6.4.3 as 192.168.68.79 (MAC 14:c6:7d:5d:48:11)
+Connected to Pi-hole v6.4.3 as 192.168.1.42 (MAC 3c:22:fb:12:34:56)
 ```
 
 **Read that line.** The address is who Pi-hole thinks you are, and the device and

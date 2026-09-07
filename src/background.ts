@@ -614,11 +614,14 @@ async function handleConnect(baseUrl: string, password: string): Promise<Connect
 
   const client = await getClient(settings);
   const version = await client.requireSupportedVersion();
-  const device = await refreshDevice(client);
+  // Read-only, like the popup: connecting proves the credentials and shows who
+  // Pi-hole thinks we are. The group and client entry are created by the first
+  // switch that needs them, not by looking.
+  const identity = await resolveIdentity(client);
   const blockTtl = await client.getBlockTtl();
 
   await refreshGlobalState();
-  return { version: formatVersion(version), identity: device.identity, blockTtl };
+  return { version: formatVersion(version), identity: toIdentityView(identity), blockTtl };
 }
 
 async function handleDisconnect(): Promise<null> {
@@ -756,14 +759,16 @@ async function handleRevokeAllow(domain: string): Promise<null> {
 async function handleCrossCheck(tabId: number): Promise<CrossCheckView> {
   await ledgersRestored;
   const client = await getClient();
-  const context = await ensureDevice(client);
+  // Only the IP is needed to filter the query log; a cross-check must not create
+  // anything on the Pi-hole.
+  const identity = await resolveIdentity(client);
 
   const ledger = ledgers.get(tabId) ?? new Map<string, LedgerEntry>();
   const hosts = [...ledger.keys()];
 
   const queries = await client.getQueries({
     from: nowSeconds() - CROSS_CHECK_WINDOW_SECONDS,
-    client_ip: context.identity.ip,
+    client_ip: identity.ip,
     length: 5000
   });
 
