@@ -1,0 +1,427 @@
+/*
+ * Breaker popup.
+ *
+ * Visual idea: a breaker panel. Flat metal ground, one accent colour per state
+ * (amber = tripped for this device, red = whole house off, green = everything
+ * filtered), monospace for anything that is a machine value — hostnames, MACs,
+ * countdowns — because those are read character by character.
+ */
+
+:root {
+  color-scheme: light dark;
+
+  --bg: #f4f5f7;
+  --panel: #ffffff;
+  --panel-edge: #dfe3e8;
+  --ink: #16191d;
+  --ink-soft: #5a636e;
+  --ink-faint: #8c949e;
+
+  --on: #2e7d32;
+  --off: #c62828;
+  --warn: #ef6c00;
+  --accent: #b45309;
+  --accent-ink: #ffffff;
+
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16191d;
+    --panel: #1e2228;
+    --panel-edge: #2c323a;
+    --ink: #eceff3;
+    --ink-soft: #a8b1bc;
+    --ink-faint: #78828e;
+
+    --on: #66bb6a;
+    --off: #ef5350;
+    --warn: #ffa726;
+    --accent: #d97706;
+    --accent-ink: #16191d;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  width: 360px;
+  margin: 0;
+  padding: 0 0 10px;
+  background: var(--bg);
+  color: var(--ink);
+  font: 13px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* ── header ── */
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--panel-edge);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+/* The mark is the switch itself: a slot with the handle thrown up. */
+.brand-mark {
+  position: relative;
+  width: 13px;
+  height: 18px;
+  border-radius: 3px;
+  background: #2c323a;
+  flex: none;
+}
+
+.brand-mark::after {
+  content: "";
+  position: absolute;
+  inset: 2px 2px 8px;
+  border-radius: 1.5px;
+  background: var(--warn);
+}
+
+.brand-name {
+  font-weight: 650;
+  letter-spacing: 0.2px;
+}
+
+.connection {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--ink-soft);
+  font-family: var(--mono);
+  min-width: 0;
+}
+
+.connection span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+}
+.dot-ok {
+  background: var(--on);
+}
+.dot-bad {
+  background: var(--off);
+}
+
+/* ── banner ── */
+
+.banner {
+  margin: 8px 12px 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  border-left: 3px solid;
+}
+.banner.hidden {
+  display: none;
+}
+.banner-error {
+  background: color-mix(in srgb, var(--off) 12%, transparent);
+  border-color: var(--off);
+}
+.banner-warn {
+  background: color-mix(in srgb, var(--warn) 14%, transparent);
+  border-color: var(--warn);
+}
+.banner-ok {
+  background: color-mix(in srgb, var(--on) 12%, transparent);
+  border-color: var(--on);
+}
+
+/* ── duration picker ── */
+
+.durations-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px 2px;
+}
+
+.durations-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--ink-faint);
+  flex: none;
+}
+
+.durations {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+}
+
+.chip {
+  flex: 1;
+  padding: 5px 2px;
+  font: inherit;
+  font-size: 11px;
+  border: 1px solid var(--panel-edge);
+  border-radius: 5px;
+  background: var(--panel);
+  color: var(--ink-soft);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.chip:hover {
+  border-color: var(--accent);
+}
+.chip-on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+/* ── panels ── */
+
+.panel {
+  margin: 8px 12px 0;
+  padding: 10px 12px 12px;
+  background: var(--panel);
+  border: 1px solid var(--panel-edge);
+  border-radius: 8px;
+}
+
+.panel h2 {
+  margin: 0 0 8px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: var(--ink-faint);
+  font-weight: 650;
+}
+
+.subtle {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+  color: var(--ink-soft);
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.state {
+  font-weight: 600;
+  margin-bottom: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.state-on {
+  color: var(--on);
+}
+.state-off {
+  color: var(--off);
+}
+
+/* ── host list ── */
+
+.hosts {
+  max-height: 190px;
+  overflow-y: auto;
+  margin: 0 -2px 8px;
+}
+
+.host {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 2px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.host:hover {
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+}
+
+.host input {
+  flex: none;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.host-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.host-meta {
+  flex: none;
+  font-size: 10px;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.verdict {
+  flex: none;
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  border: 1px solid var(--panel-edge);
+  color: var(--ink-faint);
+}
+.verdict-blocked {
+  color: var(--off);
+  border-color: color-mix(in srgb, var(--off) 45%, transparent);
+}
+.verdict-allowed {
+  color: var(--ink-faint);
+}
+.verdict-unseen {
+  color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn) 45%, transparent);
+}
+
+.empty {
+  margin: 2px 0;
+  font-size: 11px;
+  color: var(--ink-faint);
+}
+
+/* ── grants ── */
+
+.grants h3 {
+  margin: 10px 0 5px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--ink-faint);
+  font-weight: 650;
+}
+
+.grant {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 5px;
+  border-radius: 4px;
+  border-left: 2px solid transparent;
+}
+.grant-here {
+  border-left-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.grant-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.grant-timer {
+  flex: none;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── buttons ── */
+
+.actions {
+  display: flex;
+  gap: 6px;
+}
+
+.btn {
+  padding: 6px 10px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 550;
+  border-radius: 5px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.btn-secondary {
+  background: transparent;
+  border-color: var(--panel-edge);
+  color: var(--ink);
+}
+.btn-danger {
+  background: var(--off);
+  color: #fff;
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--ink-soft);
+  border-color: transparent;
+}
+.btn-ghost:hover:not(:disabled) {
+  color: var(--ink);
+  border-color: var(--panel-edge);
+}
+
+.btn.tiny {
+  padding: 2px 6px;
+  font-size: 10px;
+}
+.btn.wide {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+}
+
+/* ── notes / footer ── */
+
+.note {
+  margin: 8px 0 0;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--ink-faint);
+}
+
+.foot {
+  padding: 10px 12px 0;
+  text-align: right;
+}
+
+.foot a {
+  font-size: 11px;
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+.foot a:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}

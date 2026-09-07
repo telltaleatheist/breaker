@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Breaker — Options</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="head">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <div>
+          <h1>Breaker</h1>
+          <p class="tagline">
+            One switch per circuit: trip the breaker for this tab, this device, or the whole
+            house. It resets itself on a timer.
+          </p>
+        </div>
+      </header>
+
+      <section class="card">
+        <h2>Your Pi-hole</h2>
+        <form id="connect-form" novalidate>
+          <label class="field">
+            <span class="field-label">Address</span>
+            <input
+              id="url"
+              type="text"
+              placeholder="http://pi.hole"
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <span class="field-hint">
+              The same address you use for the Pi-hole web interface — for example
+              <code>http://pi.hole</code> or <code>http://192.168.1.5</code>. Breaker needs
+              Pi-hole v6 or later; it will say so if yours is older.
+            </span>
+          </label>
+
+          <label class="field">
+            <span class="field-label">Password</span>
+            <input id="password" type="password" autocomplete="off" />
+            <span class="field-hint">
+              <strong>Use an app password.</strong> In Pi-hole: Settings → Web interface →
+              App password. An app password is revocable in one click and is not your real
+              Pi-hole login, which matters because Chrome stores extension settings
+              unencrypted on disk. An app password is also the only way in if you have
+              two-factor authentication switched on.
+            </span>
+          </label>
+
+          <label class="checkbox">
+            <input id="reveal" type="checkbox" />
+            <span>Show password</span>
+          </label>
+
+          <div class="buttons">
+            <button id="connect" type="submit" class="btn btn-primary">Connect</button>
+            <button id="disconnect" type="button" class="btn btn-ghost" hidden>
+              Disconnect
+            </button>
+          </div>
+        </form>
+
+        <div id="result" class="result result-info"></div>
+      </section>
+
+      <section id="identity" class="card" hidden>
+        <h2>This device</h2>
+        <p class="note">
+          Everything except the network switch depends on Pi-hole identifying this machine
+          correctly. This is what it resolved — if the address below is not this computer,
+          you are probably behind a VPN or a second router, and only the network switch will
+          behave the way you expect.
+        </p>
+        <div id="identity-body"></div>
+      </section>
+
+      <section class="card">
+        <h2>Maintenance</h2>
+        <div class="buttons">
+          <button id="setup-device" type="button" class="btn btn-secondary">
+            Set up this device
+          </button>
+          <button id="sweep" type="button" class="btn btn-secondary">
+            Clean up expired entries
+          </button>
+        </div>
+        <p class="note">
+          <strong>Set up this device</strong> creates (or adopts) this machine's Pi-hole
+          group and client entry. It runs automatically the first time you use a switch;
+          this button is here for when you want to see it happen.
+          <br />
+          <strong>Clean up expired entries</strong> runs the sweep now instead of waiting for
+          the next 10-minute pass. Breaker only ever removes entries whose Pi-hole comment
+          says it created them.
+        </p>
+      </section>
+    </main>
+
+    <script src="options.js"></script>
+  </body>
+</html>

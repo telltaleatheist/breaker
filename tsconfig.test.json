@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // The tests exercise src/api and src/core, which never touch chrome.*; the
+    // node types are here for vitest.config.ts, not for anything under src/.
+    "types": ["chrome", "node"]
+  },
+  "include": ["src", "test", "vitest.config.ts"]
+}

@@ -1,0 +1,29 @@
+{
+  "name": "breaker",
+  "version": "0.1.0",
+  "description": "Trip the ad-blocking breaker for this tab, this device, or your whole network. Works with Pi-hole v6+.",
+  "license": "MIT",
+  "author": "Owen Morgan",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "watch": "node build.mjs --watch",
+    "icons": "node scripts/make-icons.mjs",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.test.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "package": "node build.mjs && node package.mjs",
+    "live-check": "node scripts/live-check.mjs"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.270",
+    "@types/node": "^20.14.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.6.0",
+    "vitest": "^4.1.11"
+  }
+}
